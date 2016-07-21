@@ -29,7 +29,7 @@ public class LightControlService {
     }
 
     public void test(List<String> ids) {
-        List<Test> tests = new ArrayList<>();
+        final List<Test> tests = new ArrayList<>();
         Random random = new Random();
         for (int i = 0; i < 10; i++) {
             tests.add(new Test(ids.get(0), random.nextInt(10) * 10));
