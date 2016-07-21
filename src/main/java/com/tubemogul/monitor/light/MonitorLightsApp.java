@@ -1,13 +1,10 @@
 package com.tubemogul.monitor.light;
 
-import org.skife.jdbi.v2.DBI;
 
 import com.tubemogul.monitor.light.config.MonitorLightsConfiguration;
-import com.tubemogul.monitor.light.dao.TestDao;
-import com.tubemogul.monitor.light.resources.TestResource;
+import com.tubemogul.monitor.light.resources.ProductResource;
 
 import io.dropwizard.Application;
-import io.dropwizard.jdbi.DBIFactory;
 import io.dropwizard.setup.Bootstrap;
 import io.dropwizard.setup.Environment;
 
@@ -28,15 +25,8 @@ public class MonitorLightsApp extends Application<MonitorLightsConfiguration> {
     
     
     private void registerResources(MonitorLightsConfiguration cfg, Environment env) throws ClassNotFoundException {
-        // dao level
-        final DBIFactory factory = new DBIFactory();
-        final DBI dbi = factory.build(env, cfg.getDataSourceFactory(), "mysql");
-        
-        // create dao
-        final TestDao dao = dbi.onDemand(TestDao.class);
-        
         // create the resource
-        final TestResource testResource = new TestResource(dao);
-        env.jersey().register(testResource);
+        final ProductResource productResource = new ProductResource();
+        env.jersey().register(productResource);
     }
 }
