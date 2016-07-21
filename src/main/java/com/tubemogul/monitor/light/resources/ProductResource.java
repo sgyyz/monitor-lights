@@ -16,37 +16,53 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.tubemogul.monitor.light.entity.ProductEntity;
+import com.tubemogul.monitor.light.dto.ProductDTO;
+import com.tubemogul.monitor.light.enums.ColorEnum;
 
 @Path("/monitor-lights")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductResource {
-    private static final Map<String, ProductEntity> productMap = new HashMap<>();
+    private static final Map<String, ProductDTO> productMap = new HashMap<>();
 
     @GET
-    public List<ProductEntity> findAllProducts() {
+    public List<ProductDTO> findAllProducts() {
         return new ArrayList<>(productMap.values());
     }
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response addNewProduct(ProductEntity entity) {
+    public Response addNewProduct(ProductDTO entity) {
+        String id = getRandomId();
+        entity.setId(id);
+        
         productMap.put(getRandomId(), entity);
-        return Response.ok().build();
+        return Response.ok().entity(entity).build();
     }
 
     // This can update from any place if they post this entity
-    // 1. update from sentinel, or other service, or 
     @Path("/{id}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateProduct(@PathParam("id") Integer id, ProductEntity entity) {
-        // TODO: 1. FIND THE ENTITY BY ID
-        // TODO: 2. UPDATE THE FIELDS EXCEPT FIELD
+    public Response updateProduct(@PathParam("id") String id, ProductDTO product) {
+        productMap.put(id, product);
+
         // TODO: 3. CALL XIAODONG'S API TO CHANGE THE LIGHTS
-        return Response.ok().build();
+        return Response.ok().entity(getLightColor(product)).build();
     }
-    
+
+    private ColorEnum getLightColor(ProductDTO product) {
+        if (product.getSuccessRatio() <= product.getRedLight()) {
+            return ColorEnum.RED;
+        } else if (product.getSuccessRatio() > product.getRedLight()
+                && product.getSuccessRatio() <= product.getYellowLight()) {
+            return ColorEnum.YELLOW;
+        } else if (product.getSuccessRatio() > product.getGreenLight()) {
+            return ColorEnum.GREEN;
+        } else {
+            return ColorEnum.RED;
+        }
+    }
+
     private static String getRandomId() {
         return UUID.randomUUID().toString();
     }
