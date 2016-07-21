@@ -31,9 +31,11 @@ public class MonitorLightsApp extends Application<MonitorLightsConfiguration> {
         // dao level
         final DBIFactory factory = new DBIFactory();
         final DBI dbi = factory.build(env, cfg.getDataSourceFactory(), "mysql");
+        
+        // create dao
         final TestDao dao = dbi.onDemand(TestDao.class);
         
-        
+        // create the resource
         final TestResource testResource = new TestResource(dao);
         env.jersey().register(testResource);
     }
