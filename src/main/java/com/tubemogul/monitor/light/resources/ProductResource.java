@@ -20,6 +20,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.google.common.collect.Lists;
 import com.tubemogul.monitor.light.dto.LightChangeDTO;
 import com.tubemogul.monitor.light.dto.LightControlDTO;
 import com.tubemogul.monitor.light.dto.ProductDTO;
@@ -76,6 +77,10 @@ public class ProductResource {
     @Consumes
     public Response controlLights(@PathParam("id") String id, LightChangeDTO lightChangeDTO) {
         ProductDTO productDTO = productMap.get(id);
+        if (productDTO == null) {
+            return Response.serverError().entity(new ErrorMessage("No product, please setup your own product."))
+                    .build();
+        }
         LightControlDTO lightControlDTO = buildLightControlDTO(lightChangeDTO.getValue(), productDTO);
 
         LOGGER.debug("light change: {}", lightControlDTO);
@@ -92,6 +97,14 @@ public class ProductResource {
         return Response.serverError().entity(new ErrorMessage("Can't change the light color")).build();
     }
 
+    @Path("/test")
+    @GET
+    public Response callAPI() {
+        LightControlService service = new LightControlService();
+        service.test(Lists.newArrayList(productMap.keySet()));
+        
+        return Response.ok().build();
+    }
     private LightControlDTO buildLightControlDTO(int currentValue, ProductDTO productDTO) {
         LightControlDTO lightControlDTO = new LightControlDTO();
 
