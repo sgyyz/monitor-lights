@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<workbook>
+	<worksheet name="Order">
+		<!-- Header Section -->
+		<section startRow="0" endRow="19">
+			<!-- ssp order basic information -->
+			<mapping cell="B4">order.placementName</mapping>
+		</section>
+
+		<loop startRow="20" endRow="20" items="order.rankers" var="ranker"
+			varType="com.troy.young.main.XLSSspOrderRankerDTO">
+			<section startRow="20" endRow="20">
+				<mapping row="20" col="0">ranker.networkCode</mapping>
+				<mapping row="20" col="1">ranker.sellingTitle</mapping>
+				<mapping row="20" col="2">ranker.day</mapping>
+				<mapping row="20" col="3">ranker.startHour</mapping>
+				<mapping row="20" col="4">ranker.endHour</mapping>
+				<mapping row="20" col="5">ranker.length</mapping>
+				<mapping row="20" col="6">ranker.cpm</mapping>
+				
+				<!-- weekly data -->
+				<mapping row="20" col="7">ranker.weekData1</mapping>
+				<mapping row="20" col="8">ranker.weekData2</mapping>
+				<mapping row="20" col="9">ranker.weekData3</mapping>
+				<mapping row="20" col="10">ranker.weekData4</mapping>
+				<mapping row="20" col="11">ranker.weekData5</mapping>
+				<mapping row="20" col="12">ranker.weekData6</mapping>
+				<mapping row="20" col="13">ranker.weekData7</mapping>
+				<mapping row="20" col="14">ranker.weekData8</mapping>
+				<mapping row="20" col="15">ranker.weekData9</mapping>
+				<mapping row="20" col="16">ranker.weekData10</mapping>
+				<mapping row="20" col="17">ranker.weekData11</mapping>
+				<mapping row="20" col="18">ranker.weekData12</mapping>
+				<mapping row="20" col="19">ranker.weekData13</mapping>
+			</section>
+			<loopbreakcondition>
+				<rowcheck offset="0">
+					<cellcheck offset="0" />
+				</rowcheck>
+			</loopbreakcondition>
+		</loop>
+	</worksheet>
+</workbook>
