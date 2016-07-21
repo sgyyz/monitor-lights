@@ -16,13 +16,30 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.tubemogul.monitor.light.dto.LightChangeDTO;
+import com.tubemogul.monitor.light.dto.LightControlDTO;
 import com.tubemogul.monitor.light.dto.ProductDTO;
-import com.tubemogul.monitor.light.enums.ColorEnum;
+import com.tubemogul.monitor.light.dto.LightStatus;
+import com.tubemogul.monitor.light.enums.Method;
+import com.tubemogul.monitor.light.service.LightControlService;
+
+import io.dropwizard.jersey.errors.ErrorMessage;
 
 @Path("/monitor-lights")
 @Produces(MediaType.APPLICATION_JSON)
 public class ProductResource {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ProductResource.class);
     private static final Map<String, ProductDTO> productMap = new HashMap<>();
+
+    private final String remoteServiceUrl;
+
+    public ProductResource(String remoteServiceUrl) {
+        this.remoteServiceUrl = remoteServiceUrl;
+    }
 
     @GET
     public List<ProductDTO> findAllProducts() {
@@ -32,10 +49,11 @@ public class ProductResource {
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
     public Response addNewProduct(ProductDTO entity) {
+        LOGGER.debug("save: {}", entity);
         String id = getRandomId();
         entity.setId(id);
-        
-        productMap.put(getRandomId(), entity);
+
+        productMap.put(id, entity);
         return Response.ok().entity(entity).build();
     }
 
@@ -43,24 +61,58 @@ public class ProductResource {
     @Path("/{id}")
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
-    public Response updateProduct(@PathParam("id") String id, ProductDTO product) {
-        productMap.put(id, product);
+    public Response updateProduct(@PathParam("id") String id, ProductDTO product) throws JsonProcessingException {
+        ProductDTO oldProduct = productMap.get(id);
+        if (oldProduct == null) {
+            return Response.serverError().entity(new ErrorMessage("Can't find product.")).build();
+        }
 
-        // TODO: 3. CALL XIAODONG'S API TO CHANGE THE LIGHTS
-        return Response.ok().entity(getLightColor(product)).build();
+        productMap.put(id, product);
+        return Response.ok().entity(product).build();
     }
 
-    private ColorEnum getLightColor(ProductDTO product) {
-        if (product.getSuccessRatio() <= product.getRedLight()) {
-            return ColorEnum.RED;
-        } else if (product.getSuccessRatio() > product.getRedLight()
-                && product.getSuccessRatio() <= product.getYellowLight()) {
-            return ColorEnum.YELLOW;
-        } else if (product.getSuccessRatio() > product.getGreenLight()) {
-            return ColorEnum.GREEN;
-        } else {
-            return ColorEnum.RED;
+    @Path("/{id}")
+    @POST
+    @Consumes
+    public Response controlLights(@PathParam("id") String id, LightChangeDTO lightChangeDTO) {
+        ProductDTO productDTO = productMap.get(id);
+        LightControlDTO lightControlDTO = buildLightControlDTO(lightChangeDTO.getValue(), productDTO);
+
+        LOGGER.debug("light change: {}", lightControlDTO);
+
+        LightControlService service = new LightControlService();
+        try {
+            if (service.changeLightColor(remoteServiceUrl, lightControlDTO)) {
+                return Response.ok().entity(lightControlDTO).build();
+            }
+        } catch (JsonProcessingException e) {
+            LOGGER.error("parsing error: {}", e);
+            return Response.serverError().entity(new ErrorMessage("Can't build json to call server")).build();
         }
+        return Response.serverError().entity(new ErrorMessage("Can't change the light color")).build();
+    }
+
+    private LightControlDTO buildLightControlDTO(int currentValue, ProductDTO productDTO) {
+        LightControlDTO lightControlDTO = new LightControlDTO();
+
+        int rgbValue = getRgbValue(currentValue, productDTO);
+        Method method = rgbValue == -1 ? Method.SET_POWER : Method.SET_RGB;
+        lightControlDTO.setMethod(method);
+        lightControlDTO.setLightId(productDTO.getLightId());
+        lightControlDTO.setPower(Method.SET_POWER.equals(method) ? "off" : "on");
+        lightControlDTO.setRgbValue(rgbValue);
+
+        return lightControlDTO;
+    }
+
+    private int getRgbValue(int currentValue, ProductDTO productDTO) {
+        List<LightStatus> status = productDTO.getStatusList();
+        for (LightStatus lightStatus : status) {
+            if (currentValue > lightStatus.getStartValue() && currentValue <= lightStatus.getEndValue()) {
+                return lightStatus.getRgbValue();
+            }
+        }
+        return -1;
     }
 
     private static String getRandomId() {

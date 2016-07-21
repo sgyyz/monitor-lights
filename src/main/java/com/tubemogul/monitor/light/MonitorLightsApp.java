@@ -1,6 +1,5 @@
 package com.tubemogul.monitor.light;
 
-
 import com.tubemogul.monitor.light.config.MonitorLightsConfiguration;
 import com.tubemogul.monitor.light.resources.ProductResource;
 
@@ -20,13 +19,12 @@ public class MonitorLightsApp extends Application<MonitorLightsConfiguration> {
 
     @Override
     public void initialize(Bootstrap<MonitorLightsConfiguration> bootstrap) {
-        
+
     }
-    
-    
+
     private void registerResources(MonitorLightsConfiguration cfg, Environment env) throws ClassNotFoundException {
         // create the resource
-        final ProductResource productResource = new ProductResource();
+        final ProductResource productResource = new ProductResource(cfg.getRemoteServiceUrl());
         env.jersey().register(productResource);
     }
 }
