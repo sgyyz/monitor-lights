@@ -20,7 +20,7 @@ public class LightControlService {
             throws JsonProcessingException {
          ObjectMapper mapper = new ObjectMapper();
          String json = mapper.writeValueAsString(lightControlDTO);
-         Response response = given().contentType(MediaType.APPLICATION_JSON).post(remoteServiceUrl, json);
+         Response response = given().contentType(MediaType.APPLICATION_JSON).body(json).post(remoteServiceUrl);
          if (response.getStatusCode() == 200) {
          return true;
          }
