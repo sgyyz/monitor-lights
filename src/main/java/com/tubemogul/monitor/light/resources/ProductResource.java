@@ -1,6 +1,5 @@
 package com.tubemogul.monitor.light.resources;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -8,6 +7,7 @@ import java.util.UUID;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.OPTIONS;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -42,9 +42,26 @@ public class ProductResource {
         this.remoteServiceUrl = remoteServiceUrl;
     }
 
+    @OPTIONS
+    public Response getOptions() {
+        return Response.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With").build();
+    }
+
+    @OPTIONS
+    @Path("/{id}")
+    public Response getOptionsId(@PathParam("id") String id) {
+        return Response.ok()
+                .header("Access-Control-Allow-Origin", "*")
+                .header("Access-Control-Allow-Methods", "POST, GET, PUT, UPDATE, OPTIONS")
+                .header("Access-Control-Allow-Headers", "Content-Type, Accept, X-Requested-With").build();
+    }
+
     @GET
-    public List<ProductDTO> findAllProducts() {
-        return new ArrayList<>(productMap.values());
+    public Response findAllProducts() {
+        return Response.ok().entity(productMap).header("Access-Control-Allow-Origin", "*").build();
     }
 
     @POST
@@ -55,7 +72,7 @@ public class ProductResource {
         entity.setId(id);
 
         productMap.put(id, entity);
-        return Response.ok().entity(entity).build();
+        return Response.ok().entity(entity).header("Access-Control-Allow-Origin", "*").build();
     }
 
     // This can update from any place if they post this entity
@@ -65,11 +82,12 @@ public class ProductResource {
     public Response updateProduct(@PathParam("id") String id, ProductDTO product) throws JsonProcessingException {
         ProductDTO oldProduct = productMap.get(id);
         if (oldProduct == null) {
-            return Response.serverError().entity(new ErrorMessage("Can't find product.")).build();
+            return Response.serverError().entity(new ErrorMessage("Can't find product."))
+                    .header("Access-Control-Allow-Origin", "*").build();
         }
 
         productMap.put(id, product);
-        return Response.ok().entity(product).build();
+        return Response.ok().entity(product).header("Access-Control-Allow-Origin", "*").build();
     }
 
     @Path("/{id}")
@@ -79,6 +97,7 @@ public class ProductResource {
         ProductDTO productDTO = productMap.get(id);
         if (productDTO == null) {
             return Response.serverError().entity(new ErrorMessage("No product, please setup your own product."))
+                    .header("Access-Control-Allow-Origin", "*")
                     .build();
         }
         LightControlDTO lightControlDTO = buildLightControlDTO(lightChangeDTO.getValue(), productDTO);
@@ -88,13 +107,15 @@ public class ProductResource {
         LightControlService service = new LightControlService();
         try {
             if (service.changeLightColor(remoteServiceUrl, lightControlDTO)) {
-                return Response.ok().entity(lightControlDTO).build();
+                return Response.ok().entity(lightControlDTO).header("Access-Control-Allow-Origin", "*").build();
             }
         } catch (JsonProcessingException e) {
             LOGGER.error("parsing error: {}", e);
-            return Response.serverError().entity(new ErrorMessage("Can't build json to call server")).build();
+            return Response.serverError().entity(new ErrorMessage("Can't build json to call server"))
+                    .header("Access-Control-Allow-Origin", "*").build();
         }
-        return Response.serverError().entity(new ErrorMessage("Can't change the light color")).build();
+        return Response.serverError().entity(new ErrorMessage("Can't change the light color"))
+                .header("Access-Control-Allow-Origin", "*").build();
     }
 
     @Path("/test")
@@ -102,9 +123,10 @@ public class ProductResource {
     public Response callAPI() {
         LightControlService service = new LightControlService();
         service.test(Lists.newArrayList(productMap.keySet()));
-        
-        return Response.ok().build();
+
+        return Response.ok().header("Access-Control-Allow-Origin", "*").build();
     }
+
     private LightControlDTO buildLightControlDTO(int currentValue, ProductDTO productDTO) {
         LightControlDTO lightControlDTO = new LightControlDTO();
 
